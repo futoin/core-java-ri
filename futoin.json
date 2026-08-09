@@ -1,0 +1,19 @@
+{
+  "name": "futoin/core-java-ri",
+  "version": "0.0.1",
+  "vcs": "git",
+  "plugins": {
+    "release": "futoin.cid.misc.releasetool"
+  },
+  "toolTune": {
+    "release": {
+      "gradle": "build.gradle.kts"
+    }
+  },
+  "actions": {
+    "check": [
+      "@default",
+      "@cte gradle test"
+    ]
+  }
+}
