@@ -20,5 +20,7 @@ module org.futoin.ri.asyncsteps {
     exports org.futoin.ri.asyncsteps;
 
     requires transitive org.futoin.api;
-    provides org.futoin.api.AsyncSteps with org.futoin.ri.asyncsteps.AsyncStepsRI;
+
+    provides org.futoin.api.AsyncSteps with
+            org.futoin.ri.asyncsteps.AsyncStepsRI;
 }

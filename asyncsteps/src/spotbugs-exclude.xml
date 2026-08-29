@@ -1,3 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
+  <Match>
+    <Class name="org.futoin.ri.asyncsteps.AsyncStepsRI$StateImpl" />
+    <Or>
+        <Method name="dynamic_items" />
+        <Method name="last_exception" />
+    </Or>
+    <Bug code="EI" />
+  </Match>
+  <Match>
+    <Or>
+        <Class name="org.futoin.ri.asyncsteps.AsyncStepsRI" />
+        <Class name="org.futoin.ri.asyncsteps.AsyncStepsRI$Protector" />
+    </Or>
+    <Method name="state" />
+    <Bug code="EI" />
+  </Match>
+  <Match>
+    <Class name="org.futoin.ri.asyncsteps.AsyncToolRI" />
+    <Method name="lambda$new$0" />
+    <Bug code="NN" />
+  </Match>
 </FindBugsFilter>

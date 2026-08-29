@@ -59,11 +59,11 @@ subprojects {
 
         tasks.compileJava {
             options.javaModuleVersion = provider { version as String }
-            options.compilerArgs.addAll(listOf("-Xlint:all", "-Xdoclint:all", "-Werror"))
+            options.compilerArgs.addAll(listOf("-Xlint:all", "-Xdoclint:all", "-Werror", "-Xdiags:verbose"))
         }
         tasks.compileTestJava {
             options.javaModuleVersion = provider { version as String }
-            options.compilerArgs.addAll(listOf("-Xlint:all", "-Xdoclint:none", "-Werror"))
+            options.compilerArgs.addAll(listOf("-Xlint:all", "-Xdoclint:none", "-Werror", "-Xdiags:verbose"))
         }
 
 
