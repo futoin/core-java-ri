@@ -82,13 +82,14 @@ subprojects {
             useJUnitPlatform()
             testLogging {
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-                // showStandardStreams = true
+                showStandardStreams = true
                 showCauses = true
 
                 // events("standardOut", "standardError", "passed", "skipped", "failed")
                 events("passed", "skipped", "failed")
             }
             finalizedBy(tasks.jacocoTestReport)
+            jvmArgs.add("-XX:+EnableDynamicAgentLoading")
         }
         tasks.jacocoTestReport {
             dependsOn(tasks.test)

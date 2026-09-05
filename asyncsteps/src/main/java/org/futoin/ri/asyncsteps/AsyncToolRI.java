@@ -2,14 +2,16 @@
  * Copyright 2026 FutoIn Project (https://futoin.org)
  * Copyright 2026 Andrey Galkin <andrey@futoin.org>
  *
- * <p>Licensed under the FutoIn Public License 1.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the FutoIn Public License 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *     https://specs.futoin.org/LICENSE.txt
  *
- * <p>Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -218,10 +220,12 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
                             break;
                         }
 
+                        // Do not cast to int too early!
+                        var ns = delay % 1_000_000L;
+                        var ms = delay / 1_000_000L;
+
                         try {
-                            var ns = ((int) delay) % 1_000_000;
-                            var ms = delay / 1_000_000;
-                            poke_lock_.wait(ms, ns);
+                            poke_lock_.wait(ms, (int) ns);
                         } catch (InterruptedException ex) {
                             // pass
                         }
@@ -244,7 +248,8 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
             try {
                 cb.call();
             } catch (Throwable ex) {
-                throw new RuntimeException("Unhandled exception", ex);
+                System.err.println("AsyncTool: unhandled exception");
+                ex.printStackTrace(System.err);
             }
         }
     }
@@ -293,10 +298,13 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
             }
         } else if (!orig_shutdown) {
             poke_cb_.call();
-            try {
-                thread_.join();
-            } catch (InterruptedException ex) {
-                // pass
+            for (; ; ) {
+                try {
+                    thread_.join();
+                    break;
+                } catch (InterruptedException ex) {
+                    // pass
+                }
             }
         }
 

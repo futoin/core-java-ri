@@ -2,14 +2,16 @@
  * Copyright 2026 FutoIn Project (https://futoin.org)
  * Copyright 2026 Andrey Galkin <andrey@futoin.org>
  *
- * <p>Licensed under the FutoIn Public License 1.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the FutoIn Public License 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *     https://specs.futoin.org/LICENSE.txt
  *
- * <p>Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -46,6 +48,23 @@ class AsyncToolRITest {
     }
 
     @Test
+    void verboseException() throws Throwable {
+        var f = new CompletableFuture<Void>();
+        var at = AsyncToolRI.shared();
+
+        at.immediate(
+                () -> {
+                    throw new RuntimeException("TestVerboseError");
+                });
+        at.immediate(
+                () -> {
+                    f.complete(null);
+                });
+
+        f.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
     void immediate() throws Exception {
         var f = new CompletableFuture<Integer>();
         var h = AsyncToolRI.shared().immediate(() -> f.complete(1));
@@ -76,18 +95,18 @@ class AsyncToolRITest {
             at.immediate(() -> {});
             var defer =
                     at.deferred(
-                            30,
+                            300,
                             () -> {
                                 throw new RuntimeException("Must not be executed defer");
                             });
             var defer2 =
                     at.deferred(
-                            15,
+                            150,
                             () -> {
                                 throw new RuntimeException("Must not be executed defer2");
                             });
-            at.deferred(50, () -> {});
-            at.deferred(20, () -> {});
+            at.deferred(500, () -> {});
+            at.deferred(200, () -> {});
 
             imm.cancel(); // expected to be left and discarded
 
@@ -96,17 +115,17 @@ class AsyncToolRITest {
 
             var res = at.iterate();
             assertTrue(res.haveWork());
-            assertTrue(res.delayNs() > 1_000_000);
-            assertTrue(res.delayNs() < 20_000_000);
+            assertTrue(res.delayNs() > 10_000_000);
+            assertTrue(res.delayNs() < 200_000_000);
 
-            Thread.sleep(20);
+            Thread.sleep(200);
 
             res = at.iterate();
             assertTrue(res.haveWork());
-            assertTrue(res.delayNs() > 15_000_000);
-            assertTrue(res.delayNs() < 30_000_000);
+            assertTrue(res.delayNs() > 150_000_000);
+            assertTrue(res.delayNs() < 300_000_000);
 
-            Thread.sleep(30);
+            Thread.sleep(300);
             res = at.iterate();
             assertFalse(res.haveWork());
             assertEquals(0, res.delayNs());

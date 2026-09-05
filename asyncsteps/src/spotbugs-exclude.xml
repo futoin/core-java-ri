@@ -21,4 +21,9 @@
     <Method name="lambda$new$0" />
     <Bug code="NN" />
   </Match>
+  <Match>
+    <Class name="org.futoin.ri.asyncsteps.AsyncStepsRITest$MiscAPI" />
+    <Method name="stateVarsTest" />
+    <Bug code="SWL" />
+  </Match>
 </FindBugsFilter>
