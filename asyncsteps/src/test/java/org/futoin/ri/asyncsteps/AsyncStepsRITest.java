@@ -783,6 +783,50 @@ class AsyncStepsRITest {
 
             assertEquals(3, data.counter);
         }
+
+        // --------------------------------------------------------------------
+        @Test
+        void setTimeoutInnerFailFlow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+            CompletableFuture<Void> done = new CompletableFuture<>();
+
+            var data =
+                    new Object() {
+                        int counter = 0;
+                    };
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        asi.setTimeout(100);
+                        asi.add(
+                                (asi2) -> {
+                                    asi2.waitExternal();
+                                });
+                    },
+                    (asi, err) -> {
+                        data.counter++;
+                        assertEquals("Timeout", err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        done.complete(null);
+                    });
+
+            $as.execute();
+
+            done.get(1, TimeUnit.SECONDS);
+
+            assertEquals(3, data.counter);
+        }
     }
 
     static class LoopAPI {

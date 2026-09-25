@@ -323,7 +323,7 @@ public final class AsyncStepsRI implements AsyncSteps {
                     async_tool_.deferred(
                             timeout_ms,
                             () -> {
-                                errorNoThrow(Error.Timeout);
+                                exec_top_.errorNoThrow(Error.Timeout);
                             });
         }
 
