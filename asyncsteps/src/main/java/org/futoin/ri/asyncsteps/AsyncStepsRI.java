@@ -272,7 +272,12 @@ public final class AsyncStepsRI implements AsyncSteps {
             if (async_tool_.is_same_thread()) {
                 handle_success_sync(this, args);
             } else {
-                async_tool_.immediate(() -> handle_success_sync(this, args));
+                async_tool_.immediate(
+                        () -> {
+                            if (exec_top_ == this) {
+                                handle_success_sync(this, args);
+                            }
+                        });
             }
         }
 
@@ -281,7 +286,12 @@ public final class AsyncStepsRI implements AsyncSteps {
             if (async_tool_.is_same_thread()) {
                 handle_error_sync(this, error_code, error_info, !in_exec_);
             } else {
-                async_tool_.immediate(() -> handle_error_sync(this, error_code, error_info, true));
+                async_tool_.immediate(
+                        () -> {
+                            if (exec_top_ == this) {
+                                handle_error_sync(this, error_code, error_info, true);
+                            }
+                        });
             }
         }
 

@@ -619,6 +619,95 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void externalSuccessCancelRace() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+            CompletableFuture<AsyncSteps> wait = new CompletableFuture<>();
+            CompletableFuture<Void> done = new CompletableFuture<>();
+
+            var data =
+                    new Object() {
+                        int counter = 0;
+                    };
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        wait.complete(asi);
+                        asi.waitExternal();
+                    });
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                    });
+
+            $as.execute();
+
+            var inner_asi = wait.get(1, TimeUnit.SECONDS);
+            $as.cancel();
+            inner_asi.success();
+            $as.tool()
+                    .immediate(
+                            () -> {
+                                done.complete(null);
+                            });
+
+            done.get(1, TimeUnit.SECONDS);
+
+            assertEquals(1, data.counter);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
+        void externalErrorCancelRace() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+            CompletableFuture<AsyncSteps> wait = new CompletableFuture<>();
+            CompletableFuture<Void> done = new CompletableFuture<>();
+
+            var data =
+                    new Object() {
+                        int counter = 0;
+                    };
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        wait.complete(asi);
+                        asi.waitExternal();
+                    },
+                    (asi, err) -> {
+                        data.counter++;
+                    });
+
+            $as.execute();
+
+            var inner_asi = wait.get(1, TimeUnit.SECONDS);
+            $as.cancel();
+            inner_asi.errorNoThrow("Test");
+            $as.tool()
+                    .immediate(
+                            () -> {
+                                done.complete(null);
+                            });
+
+            done.get(1, TimeUnit.SECONDS);
+
+            assertEquals(1, data.counter);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void setTimeoutSuccessFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<AsyncSteps> wait = new CompletableFuture<>();
