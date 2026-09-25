@@ -204,7 +204,7 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
      * @hidden
      */
     private void innerLoop() {
-        while (!shutdown_) {
+        for (; ; ) {
             innerIterate();
 
             if (immediates_.isEmpty()) {
@@ -212,14 +212,12 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
 
                 if (!deferred_calls_.isEmpty()) {
                     delay = deferred_calls_.peek().fireTime_ - now();
+                } else if (foreign_actions_.isEmpty() && shutdown_) {
+                    break;
                 }
 
                 if (delay > 0) {
                     synchronized (poke_lock_) {
-                        if (shutdown_) {
-                            break;
-                        }
-
                         // Do not cast to int too early!
                         var ns = delay % 1_000_000L;
                         var ms = delay / 1_000_000L;
@@ -287,6 +285,8 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
      *
      * In case of external event loop, if must be called from that loop
      * to prevent inner race conditions.
+     *
+     * The loop is safe to shutdown only once it has not pending actions.
      */
     public void shutdown() {
         var orig_shutdown = shutdown_;
@@ -385,7 +385,7 @@ public final class AsyncToolRI implements AsyncTool, AutoCloseable {
      */
     @Override
     public Handle deferred(long delay_ms, Callback func) {
-        var fireTime = now() + (delay_ms * 1_000_000);
+        var fireTime = now() + (delay_ms * 1_000_000L);
         var handle = new DelayedHandleRI(func, fireTime);
 
         if (is_same_thread()) {
