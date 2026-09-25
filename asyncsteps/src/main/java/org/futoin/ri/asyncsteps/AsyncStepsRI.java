@@ -997,7 +997,13 @@ public final class AsyncStepsRI implements AsyncSteps {
                 handle_error_sync(current, ex.getMessage(), ex.getErrorInfo(), true);
             } catch (Throwable ex) {
                 state_.catch_trace_.call(ex);
-                handle_error_sync(current, ex.getMessage(), null, true);
+                var err = ex.getMessage();
+
+                if (err == null || err.isEmpty()) {
+                    err = ex.getClass().getName();
+                }
+
+                handle_error_sync(current, err, null, true);
             }
         }
 
@@ -1144,7 +1150,13 @@ public final class AsyncStepsRI implements AsyncSteps {
                     error_code_ = ex.getMessage();
                 } catch (Throwable ex) {
                     state_.catch_trace_.call(ex);
-                    error_code_ = ex.getMessage();
+                    var err = ex.getMessage();
+
+                    if (err == null || err.isEmpty()) {
+                        err = ex.getClass().getName();
+                    }
+
+                    error_code_ = err;
                 }
             }
 
