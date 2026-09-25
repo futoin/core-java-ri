@@ -1839,9 +1839,15 @@ class AsyncStepsRITest {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> done = new CompletableFuture<>();
 
-            AsyncSteps.ISync syncObj =
-                    (asi, exec_cb, error_cb) -> {
-                        asi.addRaw(exec_cb, error_cb);
+            var syncObj =
+                    new AsyncSteps.ISync() {
+                        @Override
+                        public void lock(AsyncSteps asi) {
+                            assertEquals($as.syncRoot(), asi.syncRoot());
+                        }
+
+                        @Override
+                        public void unlock(AsyncSteps asi) {}
                     };
 
             $as.sync(
@@ -1852,6 +1858,24 @@ class AsyncStepsRITest {
                                 (asi2) -> {
                                     done.complete(null);
                                 });
+
+                        var p = asi.parallel();
+                        p.sync(
+                                new AsyncSteps.ISync() {
+                                    @Override
+                                    public void lock(AsyncSteps asi2) {
+                                        assertNotEquals($as.syncRoot(), asi2.syncRoot());
+
+                                        asi2.add(
+                                                (asi3) -> {
+                                                    assertEquals(asi2.syncRoot(), asi3.syncRoot());
+                                                });
+                                    }
+
+                                    @Override
+                                    public void unlock(AsyncSteps asi2) {}
+                                },
+                                (asi2) -> {});
                     });
 
             $as.execute();
@@ -2030,6 +2054,11 @@ class AsyncStepsRITest {
                                 IllegalStateException.class,
                                 () -> {
                                     p.state();
+                                });
+                        assertThrows(
+                                IllegalStateException.class,
+                                () -> {
+                                    p.syncRoot();
                                 });
                         assertThrows(
                                 IllegalStateException.class,

@@ -235,8 +235,33 @@ public final class AsyncStepsRI implements AsyncSteps {
         }
 
         @Override
+        public Object syncRoot() {
+            return AsyncStepsRI.this;
+        }
+
+        @Override
         public AsyncSteps syncRaw(ISync obj, ExecuteCallback exec_cb, ErrorCallback error_cb) {
-            obj.sync(this, exec_cb, error_cb);
+            addRaw(
+                    (asi, nextArgs) -> {
+                        asi.add(
+                                (asi2) -> {
+                                    obj.lock(asi2);
+                                    ((Protector) asi).on_cancel_ =
+                                            (asi3) -> {
+                                                obj.unlock(asi2);
+                                            };
+                                });
+                        asi.addRaw(
+                                (asi2, noArgs) -> {
+                                    exec_cb.call(asi2, nextArgs);
+                                },
+                                error_cb);
+                        asi.add(
+                                (asi2) -> {
+                                    obj.unlock(asi2);
+                                });
+                    });
+
             return this;
         }
 
@@ -497,24 +522,25 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         /**
          * ignore
-         * @return ignore
+         * @param exec_cb ignore
          */
-        private AsyncStepsRI addCommon() {
+        private void addCommon(ExecuteCallback exec_cb) {
             var step = new AsyncStepsRI(state_, async_tool_, true);
+            step.addRaw(
+                    exec_cb,
+                    (asi, error) -> {
+                        // Dynamically set
+                        on_parallel_error_.call(asi, error);
+                    });
             steps_.add(step);
-            return step;
         }
 
         @Override
         public AsyncSteps addRaw(ExecuteCallback exec_cb, ErrorCallback error_cb) {
-            addCommon()
-                    .addRaw(
-                            (asi, args) -> {
-                                asi.addRaw(exec_cb, error_cb);
-                            },
-                            (asi, error) -> {
-                                on_parallel_error_.call(asi, error);
-                            });
+            addCommon(
+                    (asi, args) -> {
+                        asi.addRaw(exec_cb, error_cb);
+                    });
             return this;
         }
 
@@ -532,7 +558,10 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public AsyncSteps syncRaw(ISync obj, ExecuteCallback exec_cb, ErrorCallback error_cb) {
-            addCommon().syncRaw(obj, exec_cb, error_cb);
+            addCommon(
+                    (asi, args) -> {
+                        asi.syncRaw(obj, exec_cb, error_cb);
+                    });
             return this;
         }
 
@@ -613,22 +642,34 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void loop(LoopCallback func, String label) {
-            addCommon().loop(func, label);
+            addCommon(
+                    (asi, args) -> {
+                        asi.loop(func, label);
+                    });
         }
 
         @Override
         public <K, V> void forEach(Map<K, V> map, ForEachMapCallback<K, V> func, String label) {
-            addCommon().<K, V>forEach(map, func, label);
+            addCommon(
+                    (asi, args) -> {
+                        asi.<K, V>forEach(map, func, label);
+                    });
         }
 
         @Override
         public <V> void forEach(Iterator<V> iter, ForEachIterCallback<V> func, String label) {
-            addCommon().<V>forEach(iter, func, label);
+            addCommon(
+                    (asi, args) -> {
+                        asi.<V>forEach(iter, func, label);
+                    });
         }
 
         @Override
         public void repeat(long count, RepeatCallback func, String label) {
-            addCommon().repeat(count, func, label);
+            addCommon(
+                    (asi, args) -> {
+                        asi.repeat(count, func, label);
+                    });
         }
 
         @Override
@@ -806,6 +847,11 @@ public final class AsyncStepsRI implements AsyncSteps {
     public AsyncSteps copyFrom(AsyncSteps other) {
         root_sanity_check();
         root_.copyFrom(other);
+        return this;
+    }
+
+    @Override
+    public Object syncRoot() {
         return this;
     }
 
