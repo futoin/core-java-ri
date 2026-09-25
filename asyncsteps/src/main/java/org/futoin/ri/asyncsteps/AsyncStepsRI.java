@@ -340,8 +340,7 @@ public final class AsyncStepsRI implements AsyncSteps {
         @Override
         public void setTimeout(long timeout_ms) {
             if (error_code_ != null) {
-                coverage_proof();
-                on_invalid_call("setTimeout() call on protector");
+                throw new IllegalStateException("setTimeout() call on protector");
             }
 
             limit_handle_ =
@@ -355,8 +354,7 @@ public final class AsyncStepsRI implements AsyncSteps {
         @Override
         public void setCancel(CancelCallback on_cancel) {
             if (error_code_ != null) {
-                coverage_proof();
-                on_invalid_call("setCancel() call on protector");
+                throw new IllegalStateException("setCancel() call on protector");
             }
 
             on_cancel_ = on_cancel;
@@ -365,8 +363,7 @@ public final class AsyncStepsRI implements AsyncSteps {
         @Override
         public void waitExternal() {
             if (error_code_ != null) {
-                coverage_proof();
-                on_invalid_call("waitExternal() call on protector");
+                throw new IllegalStateException("waitExternal() call on protector");
             }
 
             on_cancel_ = (AsyncSteps asi) -> {};
@@ -374,14 +371,12 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void execute() {
-            coverage_proof();
-            on_invalid_call("execute() call on protector");
+            throw new IllegalStateException("execute() call on protector");
         }
 
         @Override
         public void cancel() {
-            coverage_proof();
-            on_invalid_call("cancel() call on protector");
+            throw new IllegalStateException("cancel() call on protector");
         }
 
         @Override
@@ -551,9 +546,12 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public State state() {
-            coverage_proof();
-            on_invalid_call("state() call on parallel()");
-            return null;
+            throw new IllegalStateException("state() call on parallel()");
+        }
+
+        @Override
+        public Object syncRoot() {
+            throw new IllegalStateException("syncRoot() call on parallel()");
         }
 
         @Override
@@ -567,16 +565,12 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public AsyncSteps successStep(Object... args) {
-            coverage_proof();
-            on_invalid_call("successStep() call on parallel()");
-            return null;
+            throw new IllegalStateException("successStep() call on parallel()");
         }
 
         @Override
         public <T> AsyncSteps await(Future<T> obj) {
-            coverage_proof();
-            on_invalid_call("await() call on parallel()");
-            return null;
+            throw new IllegalStateException("await() call on parallel()");
         }
 
         @Override
@@ -586,58 +580,47 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public long binary() {
-            coverage_proof();
-            on_invalid_call("binary() call on parallel()");
-            return 0;
+            throw new IllegalStateException("binary() call on parallel()");
         }
 
         @Override
         public AsyncSteps wrap(long ptr) {
-            coverage_proof();
-            on_invalid_call("wrap() call on parallel()");
-            return null;
+            throw new IllegalStateException("wrap() call on parallel()");
         }
 
         @Override
         public void success(Object... args) {
-            coverage_proof();
-            on_invalid_call("success() call on parallel()");
+            throw new IllegalStateException("success() call on parallel()");
         }
 
         @Override
         public void errorNoThrow(String error_code, String error_info) {
-            coverage_proof();
-            on_invalid_call("errorNoThrow() call on parallel()");
+            throw new IllegalStateException("errorNoThrow() call on parallel()");
         }
 
         @Override
         public void setTimeout(long timeout_ms) {
-            coverage_proof();
-            on_invalid_call("setTimeout() call on parallel()");
+            throw new IllegalStateException("setTimeout() call on parallel()");
         }
 
         @Override
         public void setCancel(CancelCallback on_cancel) {
-            coverage_proof();
-            on_invalid_call("setCancel() call on parallel()");
+            throw new IllegalStateException("setCancel() call on parallel()");
         }
 
         @Override
         public void waitExternal() {
-            coverage_proof();
-            on_invalid_call("waitExternal() call on parallel()");
+            throw new IllegalStateException("waitExternal() call on parallel()");
         }
 
         @Override
         public void execute() {
-            coverage_proof();
-            on_invalid_call("execute() call on parallel()");
+            throw new IllegalStateException("execute() call on parallel()");
         }
 
         @Override
         public void cancel() {
-            coverage_proof();
-            on_invalid_call("cancel() call on parallel()");
+            throw new IllegalStateException("cancel() call on parallel()");
         }
 
         @Override
@@ -674,14 +657,12 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void breakLoopNoThrow(String label) {
-            coverage_proof();
-            on_invalid_call("breakLoopNoThrow() call on parallel()");
+            throw new IllegalStateException("breakLoopNoThrow() call on parallel()");
         }
 
         @Override
         public void continueLoopNoThrow(String label) {
-            coverage_proof();
-            on_invalid_call("continueLoopNoThrow() call on parallel()");
+            throw new IllegalStateException("continueLoopNoThrow() call on parallel()");
         }
     }
 
@@ -797,28 +778,12 @@ public final class AsyncStepsRI implements AsyncSteps {
     }
 
     /**
-     * A helper to workaround jacoco coverage on throw issue.
-     * @hidden
-     */
-    private static void coverage_proof() {}
-
-    /**
-     * For user error detection.
-     * @param reason Detailed error info.
-     * @hidden
-     */
-    private static void on_invalid_call(String reason) {
-        throw new IllegalStateException(reason);
-    }
-
-    /**
      * Check the state of root asyncsteps
      * @hidden
      */
     private void root_sanity_check() {
         if (root_.sub_queue_front_ != 0) {
-            coverage_proof();
-            on_invalid_call("Root steps have been already executed!");
+            throw new IllegalStateException("Root steps have been already executed!");
         }
     }
 
@@ -891,39 +856,33 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public void success(Object... args) {
-        coverage_proof();
-        on_invalid_call("success() on root");
+        throw new IllegalStateException("success() on root");
     }
 
     @Override
     public void errorNoThrow(String error_code, String error_info) {
-        coverage_proof();
-        on_invalid_call("errorNoThrow() on root");
+        throw new IllegalStateException("errorNoThrow() on root");
     }
 
     @Override
     public void setTimeout(long timeout_ms) {
-        coverage_proof();
-        on_invalid_call("setTimeout() on root");
+        throw new IllegalStateException("setTimeout() on root");
     }
 
     @Override
     public void setCancel(CancelCallback on_cancel) {
-        coverage_proof();
-        on_invalid_call("setCancel() on root");
+        throw new IllegalStateException("setCancel() on root");
     }
 
     @Override
     public void waitExternal() {
-        coverage_proof();
-        on_invalid_call("waitExternal() on root");
+        throw new IllegalStateException("waitExternal() on root");
     }
 
     @Override
     public void execute() {
         if (root_.sub_queue_front_ != 0) {
-            coverage_proof();
-            on_invalid_call("execute() on active instance");
+            throw new IllegalStateException("execute() on active instance");
         }
 
         root_.sub_queue_front_ = 2;
@@ -939,11 +898,7 @@ public final class AsyncStepsRI implements AsyncSteps {
     /** ignore */
     private void schedule_exec() {
         if (!in_exec_ && exec_top_ != null) {
-            if (exec_handle_ != null) {
-                coverage_proof();
-                on_invalid_call("sched_execute() on active instance");
-            }
-
+            assert (exec_handle_ == null);
             exec_handle_ = async_tool_.immediate(this::handle_execute);
         }
     }
@@ -1052,13 +1007,11 @@ public final class AsyncStepsRI implements AsyncSteps {
      */
     private void handle_success_sync(Protector current, Object... args) {
         if (current != exec_top_) {
-            coverage_proof();
-            on_invalid_call("success() out of order");
+            throw new IllegalStateException("success() out of order");
         }
 
         if (!current.is_sub_queue_empty()) {
-            coverage_proof();
-            on_invalid_call("success() with sub-steps");
+            throw new IllegalStateException("success() with sub-steps");
         }
 
         if (error_code_ != null) {
@@ -1095,13 +1048,11 @@ public final class AsyncStepsRI implements AsyncSteps {
     private void handle_error_sync(
             Protector current, String error_code, String error_info, boolean unwind) {
         if (current != exec_top_) {
-            coverage_proof();
-            on_invalid_call("error*() out of order");
+            throw new IllegalStateException("error*() out of order");
         }
 
         if (error_code == null) {
-            coverage_proof();
-            on_invalid_call("error*() code must be set");
+            throw new IllegalStateException("error*() code must be set");
         }
 
         error_code_ = error_code;
@@ -1193,13 +1144,11 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public void breakLoopNoThrow(String label) {
-        coverage_proof();
-        on_invalid_call("breakLoopNoThrow() on root");
+        throw new IllegalStateException("breakLoopNoThrow() on root");
     }
 
     @Override
     public void continueLoopNoThrow(String label) {
-        coverage_proof();
-        on_invalid_call("continueLoopNoThrow() on root");
+        throw new IllegalStateException("continueLoopNoThrow() on root");
     }
 }
