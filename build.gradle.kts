@@ -42,6 +42,7 @@ subprojects {
             // jUnit 6
             testImplementation(platform("org.junit:junit-bom:6.1.2"))
             testImplementation("org.junit.jupiter:junit-jupiter")
+            testCompileOnly("org.junit.jupiter:junit-jupiter-params")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
             // Mockito 5

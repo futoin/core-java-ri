@@ -243,22 +243,28 @@ public final class AsyncStepsRI implements AsyncSteps {
         public AsyncSteps syncRaw(ISync obj, ExecuteCallback exec_cb, ErrorCallback error_cb) {
             addRaw(
                     (asi, nextArgs) -> {
-                        asi.add(
-                                (asi2) -> {
+                        asi.addRaw(
+                                (asi2, noArgs) -> {
                                     obj.lock(asi2);
-                                    ((Protector) asi).on_cancel_ =
-                                            (asi3) -> {
-                                                obj.unlock(asi2);
-                                            };
+
+                                    if (error_code_ == null) {
+                                        ((Protector) asi2).parent_.on_cancel_ =
+                                                (asi3) -> {
+                                                    obj.unlock(asi2);
+                                                };
+                                    }
                                 });
                         asi.addRaw(
                                 (asi2, noArgs) -> {
                                     exec_cb.call(asi2, nextArgs);
                                 },
                                 error_cb);
-                        asi.add(
-                                (asi2) -> {
-                                    obj.unlock(asi2);
+                        asi.addRaw(
+                                (asi2, outArgs) -> {
+                                    var commonStep = ((Protector) asi2).parent_;
+                                    commonStep.on_cancel_.call(asi2);
+                                    commonStep.on_cancel_ = null;
+                                    asi2.success(outArgs.args);
                                 });
                     });
 

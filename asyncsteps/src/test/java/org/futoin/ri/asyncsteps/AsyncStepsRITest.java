@@ -1850,14 +1850,13 @@ class AsyncStepsRITest {
                         public void unlock(AsyncSteps asi) {}
                     };
 
-            $as.sync(
+            $as.successStep(1, "2", true);
+            $as.<Integer, String, Boolean>sync(
                     syncObj,
-                    (asi) -> {
-                        asi.sync(
-                                syncObj,
-                                (asi2) -> {
-                                    done.complete(null);
-                                });
+                    (asi, i, s, b) -> {
+                        assertEquals(1, i);
+                        assertEquals("2", s);
+                        assertTrue(b);
 
                         var p = asi.parallel();
                         p.sync(
@@ -1876,6 +1875,20 @@ class AsyncStepsRITest {
                                     public void unlock(AsyncSteps asi2) {}
                                 },
                                 (asi2) -> {});
+
+                        asi.sync(
+                                syncObj,
+                                (asi2) -> {
+                                    asi2.success(2, "3", false);
+                                });
+                    });
+
+            $as.<Integer, String, Boolean>add(
+                    (asi, i, s, b) -> {
+                        assertEquals(2, i);
+                        assertEquals("3", s);
+                        assertFalse(b);
+                        done.complete(null);
                     });
 
             $as.execute();
