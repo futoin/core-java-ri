@@ -1025,7 +1025,11 @@ public final class AsyncStepsRI implements AsyncSteps {
         for (var current = exec_top_; current != null; ) {
             var on_cancel = current.on_cancel_;
             if (on_cancel != null) {
-                on_cancel.call(current);
+                try {
+                    on_cancel.call(current);
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                }
             }
 
             var parent = current.parent_;
@@ -1110,7 +1114,11 @@ public final class AsyncStepsRI implements AsyncSteps {
         while (current != null) {
             var on_cancel = current.on_cancel_;
             if (on_cancel != null) {
-                on_cancel.call(current);
+                try {
+                    on_cancel.call(current);
+                } catch (Throwable ex) {
+                    ex.printStackTrace();
+                }
             }
 
             current.cleanupExternalWait();
