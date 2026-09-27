@@ -157,7 +157,7 @@ public final class AsyncStepsRI implements AsyncSteps {
         @Override
         public AsyncSteps copyFrom(AsyncSteps other) {
             if (other instanceof AsyncStepsRI o) {
-                o.stack_.forEach((p) -> this.addRaw(p.exec_cb_, p.error_cb_));
+                o.stack_.stream().skip(1).forEach((p) -> this.addRaw(p.exec_cb_, p.error_cb_));
 
                 var other_state_vars = o.state_.state_vars_;
 
@@ -307,6 +307,7 @@ public final class AsyncStepsRI implements AsyncSteps {
 
             retState.unhandled_error_ = thisState.unhandled_error_;
             retState.catch_trace_ = thisState.catch_trace_;
+            retState.cancel_handler_ = thisState.cancel_handler_;
 
             return ret;
         }
@@ -783,7 +784,7 @@ public final class AsyncStepsRI implements AsyncSteps {
                                 }
                             }
                         };
-        var root = new Protector(null, (asi, args) -> {}, overall_error_handler);
+        var root = new Protector(null, null, overall_error_handler);
         var stack = new ArrayList<Protector>();
         stack.add(root);
 
@@ -1007,6 +1008,13 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     /** ignore */
     private void handle_cancel() {
+        if (exec_top_ == null) {
+            return;
+        }
+
+        // See c-tor
+        var is_sub_step = root_.error_cb_ == null;
+
         var eh = exec_handle_;
 
         if (eh != null) {
@@ -1027,6 +1035,14 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         exec_top_ = null;
         stack_.clear();
+
+        if (!is_sub_step) {
+            var ch = state_.cancel_handler_;
+
+            if (ch != null) {
+                ch.call(this);
+            }
+        }
     }
 
     /**

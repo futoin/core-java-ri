@@ -1555,6 +1555,68 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void promiseInnerCancelFlow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        asi.tool().immediate(() -> $as.cancel());
+                        asi.waitExternal();
+                    });
+
+            assertThrows(
+                    java.util.concurrent.CancellationException.class,
+                    () -> {
+                        $as.promise().get(1, TimeUnit.SECONDS);
+                    });
+        }
+
+        // --------------------------------------------------------------------
+        @Test
+        void promiseOuterCancelFlow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            var data =
+                    new Object() {
+                        boolean cancel_called;
+                    };
+
+            CompletableFuture<Void> wait = new CompletableFuture<>();
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        asi.setCancel(
+                                (asi2) -> {
+                                    data.cancel_called = true;
+                                });
+                        wait.complete(null);
+                    });
+
+            var p = $as.promise();
+            wait.get(1, TimeUnit.SECONDS);
+            p.cancel(true);
+
+            assertThrows(
+                    java.util.concurrent.CancellationException.class,
+                    () -> {
+                        p.get(1, TimeUnit.SECONDS);
+                    });
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void awaitFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> wait = new CompletableFuture<>();
@@ -1771,8 +1833,9 @@ class AsyncStepsRITest {
         @Test
         void newInstance() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
-            CompletableFuture<Void> trace = new CompletableFuture<>();
-            CompletableFuture<Void> done = new CompletableFuture<>();
+            CompletableFuture<Void> traceDone = new CompletableFuture<>();
+            CompletableFuture<Void> errorDone = new CompletableFuture<>();
+            CompletableFuture<Void> cancelDone = new CompletableFuture<>();
 
             assertTrue($as.newInstance() instanceof AsyncStepsRI);
             assertTrue($as.parallel().newInstance() instanceof AsyncStepsRI);
@@ -1789,20 +1852,44 @@ class AsyncStepsRITest {
                         nasi.execute();
                     });
 
+            $as.add(
+                    (asi) -> {
+                        var nasi = asi.newInstance();
+                        assertTrue(nasi instanceof AsyncStepsRI);
+
+                        nasi.add(
+                                (asi2) -> {
+                                    nasi.waitExternal();
+                                });
+                        nasi.execute();
+                        nasi.tool().immediate(() -> nasi.cancel());
+                    });
+
             $as.state()
                     .set_catch_trace(
-                            (ex) -> {
+                            (asi, ex) -> {
                                 assertEquals("MyError", ex.getMessage());
-                                trace.complete(null);
+                                traceDone.complete(null);
                             });
             $as.state()
                     .set_unhandled_error(
-                            (err) -> {
+                            (asi, err) -> {
                                 assertEquals("MyError", err);
 
                                 try {
-                                    trace.get(1, TimeUnit.SECONDS);
-                                    done.complete(null);
+                                    errorDone.complete(null);
+                                } catch (Throwable ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            });
+
+            $as.state()
+                    .set_cancel_handler(
+                            (asi) -> {
+                                assertNotEquals($as, asi);
+
+                                try {
+                                    cancelDone.complete(null);
                                 } catch (Throwable ex) {
                                     throw new RuntimeException(ex);
                                 }
@@ -1810,7 +1897,9 @@ class AsyncStepsRITest {
 
             $as.execute();
 
-            done.get(1, TimeUnit.SECONDS);
+            traceDone.get(1, TimeUnit.SECONDS);
+            errorDone.get(1, TimeUnit.SECONDS);
+            cancelDone.get(1, TimeUnit.SECONDS);
         }
 
         // --------------------------------------------------------------------
@@ -1819,40 +1908,51 @@ class AsyncStepsRITest {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> done = new CompletableFuture<>();
 
-            var data = new Object() {
-                boolean cancel_called;
-                boolean step1_called;
-                boolean step2_called;
-                boolean step3_called;
-            };
+            var data =
+                    new Object() {
+                        boolean cancel_called;
+                        boolean step1_called;
+                        boolean step2_called;
+                        boolean step3_called;
+                    };
 
             $as.add(
                     (asi) -> {
-                        asi.setCancel((asi2) -> {
-                            data.cancel_called = true;
-                        });
-                        asi.add((asi2) -> {
-                            data.step1_called = true;
-                            asi2.tool().immediate(() -> {
-                                asi2.success();
-                            });
-                            asi2.waitExternal();
-                        });
-                        asi.add((asi2) -> {
-                            data.step2_called = true;
-                            asi2.tool().immediate(() -> {
-                                $as.cancel();
-                            });
-                            asi2.relinquish();
-                        });
-                        asi.add((asi2) -> {
-                            data.step3_called = true;
-                        });
+                        asi.setCancel(
+                                (asi2) -> {
+                                    data.cancel_called = true;
+                                });
+                        asi.add(
+                                (asi2) -> {
+                                    data.step1_called = true;
+                                    asi2.tool()
+                                            .immediate(
+                                                    () -> {
+                                                        asi2.success();
+                                                    });
+                                    asi2.waitExternal();
+                                });
+                        asi.add(
+                                (asi2) -> {
+                                    data.step2_called = true;
+                                    asi2.tool()
+                                            .immediate(
+                                                    () -> {
+                                                        $as.cancel();
+                                                    });
+                                    asi2.relinquish();
+                                });
+                        asi.add(
+                                (asi2) -> {
+                                    data.step3_called = true;
+                                });
                     });
 
-            assertThrows(java.util.concurrent.CancellationException.class, () -> {
-                $as.promise().get(1, TimeUnit.SECONDS);
-            });
+            assertThrows(
+                    java.util.concurrent.CancellationException.class,
+                    () -> {
+                        $as.promise().get(1, TimeUnit.SECONDS);
+                    });
 
             assertTrue(data.cancel_called);
             assertTrue(data.step1_called);
