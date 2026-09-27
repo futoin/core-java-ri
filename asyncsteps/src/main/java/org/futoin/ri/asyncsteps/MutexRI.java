@@ -32,9 +32,6 @@ public final class MutexRI extends Mutex {
     private final AtomicInteger stepCount_ = new AtomicInteger(0);
 
     /** ignore */
-    private final AtomicInteger cancelCount_ = new AtomicInteger(0);
-
-    /** ignore */
     private final ConcurrentHashMap<Object, Integer> stepMap_ = new ConcurrentHashMap<>();
 
     /** ignore */
@@ -107,12 +104,9 @@ public final class MutexRI extends Mutex {
                 queue_.add(asi);
                 asi.setCancel(
                         (asi2) -> {
-                            var total = stepCount_.decrementAndGet();
-                            var canceled = cancelCount_.incrementAndGet();
-
-                            if (canceled > (total / 2)) {
-                                queue_.removeIf((qasi) -> qasi.state() == null);
-                            }
+                            stepCount_.getAndDecrement();
+                            // We get here only if Mutex is locked, so unlock
+                            // will eventually cleanup the queue below.
                         });
             } else {
                 // release failed
@@ -190,15 +184,12 @@ public final class MutexRI extends Mutex {
                                         stepMap_.put(nextSyncRoot, 1);
                                         nextAsi.success();
                                     } else {
-                                        cancelCount_.getAndDecrement();
                                         // trigger the queue
                                         processQueue();
                                     }
                                 });
                     }
                     break;
-                } else {
-                    cancelCount_.getAndDecrement();
                 }
             } else {
                 break;

@@ -284,9 +284,8 @@ public final class AsyncStepsRI implements AsyncSteps {
                                 error_cb);
                         asi.addRaw(
                                 (asi2, outArgs) -> {
-                                    var commonStep = ((Protector) asi2).parent_;
-                                    commonStep.on_cancel_.call(asi2);
-                                    commonStep.on_cancel_ = null;
+                                    ((Protector) asi2).parent_.on_cancel_ = null;
+                                    obj.unlock(asi2);
                                     asi2.success(outArgs.args);
                                 });
                     });
