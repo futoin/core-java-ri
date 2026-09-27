@@ -107,13 +107,13 @@ class LimiterRITest {
                 var at_b = new AsyncToolRI();
                 var at_c = new AsyncToolRI()) {
             var COUNT = 1000;
-            var CONCURRENT = 3;
+            var CONCURRENT = 2;
 
             Limiter lmt =
                     new LimiterRI(
                             (new Limiter.Options())
                                     .withConcurrent(CONCURRENT)
-                                    .withRate(2)
+                                    .withRate(11)
                                     .withPeriod(1)
                                     .withBurst(-1));
 
@@ -185,8 +185,11 @@ class LimiterRITest {
                                 lmt,
                                 (asi2) -> {
                                     counter.enter();
-                                    asi.relinquish();
-                                    asi2.add((asi3) -> counter.leave());
+                                    asi2.relinquish();
+                                    asi2.add(
+                                            (asi3) -> {
+                                                counter.leave();
+                                            });
                                 });
                     });
 

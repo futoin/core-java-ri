@@ -57,7 +57,7 @@ public final class LimiterRI extends Limiter {
      */
     @Override
     public void lock(AsyncSteps asi) {
-        asi.add((asi2) -> mutex_.lock(asi2));
+        mutex_.lock(asi);
         asi.add((asi2) -> throttle_.lock(asi2));
     }
 

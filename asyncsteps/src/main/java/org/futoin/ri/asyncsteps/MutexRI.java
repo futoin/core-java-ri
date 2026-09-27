@@ -101,12 +101,15 @@ public final class MutexRI extends Mutex {
                 stepMap_.put(syncRoot, 1);
             } else if (stepCount <= maxTotal_) {
                 // queue
-                queue_.add(asi);
-                asi.setCancel(
+                asi.add(
                         (asi2) -> {
-                            stepCount_.getAndDecrement();
-                            // We get here only if Mutex is locked, so unlock
-                            // will eventually cleanup the queue below.
+                            queue_.add(asi2);
+                            asi2.setCancel(
+                                    (asi3) -> {
+                                        stepCount_.getAndDecrement();
+                                        // We get here only if Mutex is locked, so unlock
+                                        // will eventually cleanup the queue below.
+                                    });
                         });
             } else {
                 // release failed
@@ -150,48 +153,22 @@ public final class MutexRI extends Mutex {
             return;
         }
 
-        for (; ; ) {
-            var nextAsi = queue_.poll();
-
-            if (nextAsi != null) {
-                var nextSyncRoot = nextAsi.syncRoot();
-
-                if (nextAsi.state() != null) {
-                    // There is a race on cancellation
-                    //
-                    // Flows A and B in different AsyncTool threads.
-                    //
-                    // A: unlocks mutex and goes to the queue continuation below.
-                    // A: picks flow B from the queue.
-                    // B: cancellation enters and unable to remove self from the queue.
-                    // A: marks B as active with entry count 1 and schedules success().
-                    // B: exits.
-                    // B: delayed success() fires with noop and mutex stalls.
-                    // ^ to avoid this, a special extra-check inside B thread is required.
-                    //
-                    // There is still some risk of premature shutdown of the AsyncTool to
-                    // be mitigated by its convention.
-                    //
-                    var nextAsyncTool = nextAsi.tool();
-
-                    if (nextAsyncTool.is_same_thread()) {
-                        stepMap_.put(nextSyncRoot, 1);
-                        nextAsi.success();
-                    } else {
-                        nextAsyncTool.immediate(
+        // NOTE: the previous complex logic is intentionally simplified at
+        //       cost of some more cycles now.
+        for (var pollAsi = queue_.poll(); pollAsi != null; pollAsi = queue_.poll()) {
+            if (pollAsi.state() != null) {
+                final var nextAsi = pollAsi;
+                nextAsi.tool()
+                        .immediate(
                                 () -> {
                                     if (nextAsi.state() != null) {
-                                        stepMap_.put(nextSyncRoot, 1);
+                                        stepMap_.put(nextAsi.syncRoot(), 1);
                                         nextAsi.success();
                                     } else {
                                         // trigger the queue
                                         processQueue();
                                     }
                                 });
-                    }
-                    break;
-                }
-            } else {
                 break;
             }
         }

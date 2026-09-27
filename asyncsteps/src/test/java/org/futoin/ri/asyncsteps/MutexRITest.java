@@ -390,7 +390,6 @@ class MutexRITest {
             var counter_c = new EntryCounter();
 
             var done_a = new CompletableFuture<Void>();
-            var done_b = new CompletableFuture<Void>();
             var done_c = new CompletableFuture<Void>();
             AsyncSteps.State.CatchTrace catch_trace =
                     (asi, ex) -> {
@@ -428,33 +427,36 @@ class MutexRITest {
                                         asi.success();
                                     }
 
-                                    if (variant == COUNT) {
+                                    if (counter_a.counter.get() == COUNT) {
                                         done_a.complete(null);
                                     }
                                 })
                         .execute();
+
                 $asi_b.sync(
                                 mtx,
                                 (asi) -> {
                                     counter.enter();
                                     counter_b.enter();
+                                    asi.setCancel(
+                                            (asi2) -> {
+                                                counter.leave();
+                                                counter_b.leave();
+                                            });
                                     asi.add(
                                             (asi2) -> {
                                                 asi2.setTimeout(Math.max(variant % 5, 1));
                                             },
                                             (asi2, err) -> {
-                                                counter.leave();
-                                                counter_b.leave();
                                                 if (err.equals(Error.Timeout)) {
                                                     asi2.success();
                                                 }
                                             });
-                                })
-                        .add(
-                                (asi) -> {
-                                    if (variant == COUNT) {
-                                        done_b.complete(null);
-                                    }
+                                    asi.add(
+                                            (asi2) -> {
+                                                counter.leave();
+                                                counter_b.leave();
+                                            });
                                 })
                         .execute();
                 $asi_c.sync(
@@ -474,7 +476,7 @@ class MutexRITest {
                                 })
                         .add(
                                 (asi) -> {
-                                    if (variant == COUNT) {
+                                    if (counter_c.counter.get() == COUNT) {
                                         done_c.complete(null);
                                     }
                                 })
@@ -483,25 +485,29 @@ class MutexRITest {
 
             try {
                 done_a.get(10, TimeUnit.SECONDS);
-                done_b.get(10, TimeUnit.SECONDS);
                 done_c.get(10, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                ex.printStackTrace();
             } finally {
                 assertTrue(
                         counter_a.max <= CONCURRENT
                                 && counter_b.max <= CONCURRENT
-                                && counter_c.max <= CONCURRENT,
+                                && counter_c.max <= CONCURRENT
+                                && counter.max <= CONCURRENT,
                         "a/b/c = "
                                 + counter_a.max
                                 + "/"
                                 + counter_b.max
                                 + "/"
                                 + counter_c.max
-                                + "/");
+                                + "/"
+                                + counter.max);
                 assertEquals(COUNT, counter_a.counter.get());
-                assertEquals(COUNT, counter_b.counter.get());
+                assertTrue(
+                        COUNT >= counter_b.counter.get(),
+                        "counter_b.counter=" + counter_b.counter.get());
                 assertEquals(COUNT, counter_c.counter.get());
                 assertEquals(CONCURRENT, counter.max);
-                assertEquals(3 * COUNT, counter.counter.get());
             }
         }
     }

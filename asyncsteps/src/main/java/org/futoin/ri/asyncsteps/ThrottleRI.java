@@ -147,8 +147,14 @@ public final class ThrottleRI extends Throttle {
             // pass
         } else if (stepCount <= maxTotal_) {
             // queue
-            queue_.add(asi);
-            asi.waitExternal();
+            asi.add(
+                    (asi2) -> {
+                        queue_.add(asi2);
+                        asi2.setCancel(
+                                (asi3) -> {
+                                    stepCount_.decrementAndGet();
+                                });
+                    });
         } else {
             // revert
             stepCount_.decrementAndGet();
@@ -170,14 +176,7 @@ public final class ThrottleRI extends Throttle {
      */
     @Override
     public void unlock(AsyncSteps asi) {
-        /*
-        Suboptimal, keep and check against state() validity at cost
-        of under-loaded queue in the worst scenario.
-
-        if (queue_.remove(asi)) {
-            stepCount_.decrementAndGet();
-        }
-        */
+        // NOOP, see setCancel() for queue
     }
 
     /** ignore */

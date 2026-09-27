@@ -266,28 +266,25 @@ public final class AsyncStepsRI implements AsyncSteps {
         public AsyncSteps syncRaw(ISync obj, ExecuteCallback exec_cb, ErrorCallback error_cb) {
             addRaw(
                     (asi, nextArgs) -> {
-                        asi.addRaw(
-                                (asi2, noArgs) -> {
-                                    obj.lock(asi2);
+                        obj.lock(asi);
 
-                                    if (error_code_ == null) {
-                                        ((Protector) asi2).parent_.on_cancel_ =
-                                                (asi3) -> {
-                                                    obj.unlock(asi2);
-                                                };
-                                    }
-                                });
-                        asi.addRaw(
-                                (asi2, noArgs) -> {
-                                    exec_cb.call(asi2, nextArgs);
-                                },
-                                error_cb);
-                        asi.addRaw(
-                                (asi2, outArgs) -> {
-                                    ((Protector) asi2).parent_.on_cancel_ = null;
-                                    obj.unlock(asi2);
-                                    asi2.success(outArgs.args);
-                                });
+                        if (error_code_ == null) {
+                            asi.setCancel(
+                                    (asi2) -> {
+                                        obj.unlock(asi2);
+                                    });
+
+                            asi.addRaw(
+                                    (asi2, noArgs) -> {
+                                        exec_cb.call(asi2, nextArgs);
+                                    },
+                                    error_cb);
+                            asi.addRaw(
+                                    (asi2, outArgs) -> {
+                                        obj.unlock(asi2);
+                                        asi2.success(outArgs.args);
+                                    });
+                        }
                     });
 
             return this;
