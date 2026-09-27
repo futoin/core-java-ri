@@ -97,8 +97,28 @@ public final class AsyncStepsRI implements AsyncSteps {
         }
 
         @Override
+        public CatchTrace get_catch_trace() {
+            return catch_trace_;
+        }
+
+        @Override
         public void set_unhandled_error(UnhandledError cb) {
             unhandled_error_ = cb;
+        }
+
+        @Override
+        public UnhandledError get_unhandled_error() {
+            return unhandled_error_;
+        }
+
+        @Override
+        public void set_cancel_handler(CancelCallback cb) {
+            cancel_handler_ = cb;
+        }
+
+        @Override
+        public CancelCallback get_cancel_handler() {
+            return cancel_handler_;
         }
 
         /** Last error info, if any */
@@ -109,12 +129,15 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         /** Tracer for any exception caught during step execution */
         CatchTrace catch_trace_ =
-                (ex) -> {
+                (asi, ex) -> {
                     last_exception_ = ex;
                 };
 
-        /** Handler for unhandled errors when running out of the steps. */
+        /** Handler for unhandled errors when unwinding steps. */
         UnhandledError unhandled_error_;
+
+        /** Handler for overall cancellation. */
+        CancelCallback cancel_handler_;
 
         /** State variables */
         private volatile Map<String, Object> state_vars_;
@@ -749,7 +772,7 @@ public final class AsyncStepsRI implements AsyncSteps {
                             var unhandled_error = state.unhandled_error_;
 
                             if (unhandled_error != null) {
-                                unhandled_error.call(error);
+                                unhandled_error.call(AsyncStepsRI.this, error);
                             } else {
                                 System.err.println("AsyncStepsRI unhandled error: " + error);
 
@@ -951,13 +974,13 @@ public final class AsyncStepsRI implements AsyncSteps {
                     return;
                 }
             } catch (UnwindException ex) {
-                state_.catch_trace_.call(ex);
+                state_.catch_trace_.call(this, ex);
                 handle_error_sync(current, error_code_, state_.error_info_, true);
             } catch (ExtError ex) {
-                state_.catch_trace_.call(ex);
+                state_.catch_trace_.call(this, ex);
                 handle_error_sync(current, ex.getMessage(), ex.getErrorInfo(), true);
             } catch (Throwable ex) {
-                state_.catch_trace_.call(ex);
+                state_.catch_trace_.call(this, ex);
                 var err = ex.getMessage();
 
                 if (err == null || err.isEmpty()) {
@@ -1100,13 +1123,13 @@ public final class AsyncStepsRI implements AsyncSteps {
                         return;
                     }
                 } catch (UnwindException ex) {
-                    state_.catch_trace_.call(ex);
+                    state_.catch_trace_.call(this, ex);
                 } catch (ExtError ex) {
-                    state_.catch_trace_.call(ex);
+                    state_.catch_trace_.call(this, ex);
                     state_.error_info_ = ex.getErrorInfo();
                     error_code_ = ex.getMessage();
                 } catch (Throwable ex) {
-                    state_.catch_trace_.call(ex);
+                    state_.catch_trace_.call(this, ex);
                     var err = ex.getMessage();
 
                     if (err == null || err.isEmpty()) {

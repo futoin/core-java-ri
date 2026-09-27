@@ -1815,22 +1815,49 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
-        void cancel() throws Throwable {
+        void cancelFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> done = new CompletableFuture<>();
 
-            assertTrue($as.newInstance() instanceof AsyncStepsRI);
-            assertTrue($as.parallel().newInstance() instanceof AsyncStepsRI);
+            var data = new Object() {
+                boolean cancel_called;
+                boolean step1_called;
+                boolean step2_called;
+                boolean step3_called;
+            };
 
             $as.add(
                     (asi) -> {
-                        assertTrue(asi.newInstance() instanceof AsyncStepsRI);
-                        done.complete(null);
+                        asi.setCancel((asi2) -> {
+                            data.cancel_called = true;
+                        });
+                        asi.add((asi2) -> {
+                            data.step1_called = true;
+                            asi2.tool().immediate(() -> {
+                                asi2.success();
+                            });
+                            asi2.waitExternal();
+                        });
+                        asi.add((asi2) -> {
+                            data.step2_called = true;
+                            asi2.tool().immediate(() -> {
+                                $as.cancel();
+                            });
+                            asi2.relinquish();
+                        });
+                        asi.add((asi2) -> {
+                            data.step3_called = true;
+                        });
                     });
 
-            $as.execute();
+            assertThrows(java.util.concurrent.CancellationException.class, () -> {
+                $as.promise().get(1, TimeUnit.SECONDS);
+            });
 
-            done.get(1, TimeUnit.SECONDS);
+            assertTrue(data.cancel_called);
+            assertTrue(data.step1_called);
+            assertTrue(data.step2_called);
+            assertFalse(data.step3_called);
         }
 
         // --------------------------------------------------------------------

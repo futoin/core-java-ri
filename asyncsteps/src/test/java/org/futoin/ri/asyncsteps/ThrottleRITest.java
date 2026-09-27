@@ -308,7 +308,7 @@ class ThrottleRITest {
             var done_c = new CompletableFuture<Void>();
 
             AsyncSteps.State.CatchTrace catch_trace =
-                    (ex) -> {
+                    (asi, ex) -> {
                         ex.printStackTrace(System.err);
                     };
 
