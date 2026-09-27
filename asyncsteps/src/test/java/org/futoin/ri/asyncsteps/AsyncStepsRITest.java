@@ -708,6 +708,104 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void exceptionsOnCancel() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        asi.setCancel(
+                                (asi2) -> {
+                                    throw new RuntimeException("VerboseTestError1");
+                                });
+                        asi.setTimeout(1);
+                    },
+                    (asi, err) -> {
+                        assertEquals(Error.Timeout, err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        asi.setCancel(
+                                (asi2) -> {
+                                    throw new RuntimeException("VerboseTestError2");
+                                });
+                        asi.tool().immediate(() -> $as.cancel());
+                    });
+
+            assertThrows(
+                    java.util.concurrent.CancellationException.class,
+                    () -> {
+                        $as.promise().get(1, TimeUnit.SECONDS);
+                    });
+        }
+
+        // --------------------------------------------------------------------
+        @Test
+        void exceptionsNoMessage() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        throw new RuntimeException((String) null);
+                    },
+                    (asi, err) -> {
+                        assertEquals("java.lang.RuntimeException", err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        throw new RuntimeException("");
+                    },
+                    (asi, err) -> {
+                        assertEquals("java.lang.RuntimeException", err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        asi.add(
+                                (asi2) -> {
+                                    asi.error("SomeError");
+                                },
+                                (asi2, err) -> {
+                                    throw new RuntimeException((String) null);
+                                });
+                    },
+                    (asi, err) -> {
+                        assertEquals("java.lang.RuntimeException", err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        asi.add(
+                                (asi2) -> {
+                                    asi.error("SomeError");
+                                },
+                                (asi2, err) -> {
+                                    throw new RuntimeException("");
+                                });
+                    },
+                    (asi, err) -> {
+                        assertEquals("java.lang.RuntimeException", err);
+                        asi.success();
+                    });
+
+            $as.promise().get(1, TimeUnit.SECONDS);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void setTimeoutSuccessFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<AsyncSteps> wait = new CompletableFuture<>();
@@ -826,6 +924,38 @@ class AsyncStepsRITest {
             done.get(1, TimeUnit.SECONDS);
 
             assertEquals(3, data.counter);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
+        void outOfOrderCalls() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        assertThrows(
+                                IllegalStateException.class,
+                                () -> {
+                                    $as.add((asi2) -> {});
+                                });
+                        var p = asi.parallel();
+                        p.add(
+                                (asi2) -> {
+                                    assertThrows(
+                                            IllegalStateException.class,
+                                            () -> {
+                                                p.add((asi3) -> {});
+                                            });
+                                });
+                    });
+
+            $as.promise().get(1, TimeUnit.SECONDS);
         }
     }
 
@@ -1831,6 +1961,16 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void emptySteps() throws Throwable {
+            try (var at = new AsyncToolRI(() -> {})) {
+                (new AsyncStepsRI(at)).execute();
+
+                while (at.iterate().haveWork()) {}
+            }
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void newInstance() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> traceDone = new CompletableFuture<>();
@@ -1844,6 +1984,21 @@ class AsyncStepsRITest {
                     (asi) -> {
                         var nasi = asi.newInstance();
                         assertTrue(nasi instanceof AsyncStepsRI);
+
+                        var orig_state = asi.state();
+
+                        nasi.add(
+                                (asi2) -> {
+                                    assertEquals(
+                                            asi2.state().get_catch_trace(),
+                                            orig_state.get_catch_trace());
+                                    assertEquals(
+                                            asi2.state().get_unhandled_error(),
+                                            orig_state.get_unhandled_error());
+                                    assertEquals(
+                                            asi2.state().get_cancel_handler(),
+                                            orig_state.get_cancel_handler());
+                                });
 
                         nasi.add(
                                 (asi2) -> {

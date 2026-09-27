@@ -240,6 +240,9 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public AsyncSteps addRaw(ExecuteCallback exec_cb, ErrorCallback error_cb) {
+            if (exec_top_ != this) {
+                throw new IllegalStateException("adding sub-step out of order");
+            }
             stack_.add(new Protector(this, exec_cb, error_cb));
             return this;
         }
@@ -546,6 +549,10 @@ public final class AsyncStepsRI implements AsyncSteps {
          * @param exec_cb ignore
          */
         private void addCommon(ExecuteCallback exec_cb) {
+            if (on_parallel_error_ != null) {
+                throw new IllegalStateException("parallel() sub-step out of order");
+            }
+
             var step = new AsyncStepsRI(state_, async_tool_, true);
             step.addRaw(
                     exec_cb,
@@ -786,6 +793,7 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         stack_ = stack;
         root_ = root;
+        exec_top_ = root;
     }
 
     /**
@@ -803,26 +811,14 @@ public final class AsyncStepsRI implements AsyncSteps {
         this(AsyncToolRI.shared());
     }
 
-    /**
-     * Check the state of root asyncsteps
-     * @hidden
-     */
-    private void root_sanity_check() {
-        if (root_.sub_queue_front_ != 0) {
-            throw new IllegalStateException("Root steps have been already executed!");
-        }
-    }
-
     @Override
     public AsyncSteps addRaw(ExecuteCallback exec_cb, ErrorCallback error_cb) {
-        root_sanity_check();
         root_.addRaw(exec_cb, error_cb);
         return this;
     }
 
     @Override
     public AsyncSteps parallel(ErrorCallback error_cb) {
-        root_sanity_check();
         return root_.parallel(error_cb);
     }
 
@@ -836,7 +832,6 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public AsyncSteps copyFrom(AsyncSteps other) {
-        root_sanity_check();
         root_.copyFrom(other);
         return this;
     }
@@ -848,14 +843,12 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public AsyncSteps syncRaw(ISync obj, ExecuteCallback exec_cb, ErrorCallback error_cb) {
-        root_sanity_check();
         root_.syncRaw(obj, exec_cb, error_cb);
         return this;
     }
 
     @Override
     public AsyncSteps successStep(Object... args) {
-        root_sanity_check();
         root_.successStep(args);
         return this;
     }
@@ -923,7 +916,8 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     /** ignore */
     private void schedule_exec() {
-        if (!in_exec_ && exec_top_ != null) {
+        if (!in_exec_) {
+            assert (exec_top_ != null);
             assert (exec_handle_ == null);
             exec_handle_ = async_tool_.immediate(this::handle_execute);
         }
@@ -1024,7 +1018,7 @@ public final class AsyncStepsRI implements AsyncSteps {
                 try {
                     on_cancel.call(current);
                 } catch (Throwable ex) {
-                    ex.printStackTrace();
+                    ex.printStackTrace(System.err);
                 }
             }
 
@@ -1113,7 +1107,7 @@ public final class AsyncStepsRI implements AsyncSteps {
                 try {
                     on_cancel.call(current);
                 } catch (Throwable ex) {
-                    ex.printStackTrace();
+                    ex.printStackTrace(System.err);
                 }
             }
 
@@ -1169,25 +1163,21 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public void loop(LoopCallback func, String label) {
-        root_sanity_check();
         root_.loop(func, label);
     }
 
     @Override
     public <K, V> void forEach(Map<K, V> map, ForEachMapCallback<K, V> func, String label) {
-        root_sanity_check();
         root_.<K, V>forEach(map, func, label);
     }
 
     @Override
     public <V> void forEach(Iterator<V> iter, ForEachIterCallback<V> func, String label) {
-        root_sanity_check();
         root_.<V>forEach(iter, func, label);
     }
 
     @Override
     public void repeat(long count, RepeatCallback func, String label) {
-        root_sanity_check();
         root_.repeat(count, func, label);
     }
 

@@ -486,8 +486,6 @@ class MutexRITest {
             try {
                 done_a.get(10, TimeUnit.SECONDS);
                 done_c.get(10, TimeUnit.SECONDS);
-            } catch (Exception ex) {
-                ex.printStackTrace();
             } finally {
                 assertTrue(
                         counter_a.max <= CONCURRENT
