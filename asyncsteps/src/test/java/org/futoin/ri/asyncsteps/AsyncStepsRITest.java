@@ -944,6 +944,25 @@ class AsyncStepsRITest {
                                 () -> {
                                     $as.add((asi2) -> {});
                                 });
+                        asi.add(
+                                (asi2) -> {
+                                    assertThrows(
+                                            IllegalStateException.class,
+                                            () -> {
+                                                asi.setTimeout(1);
+                                            });
+                                    assertThrows(
+                                            IllegalStateException.class,
+                                            () -> {
+                                                asi.setCancel((asi3) -> {});
+                                            });
+                                    assertThrows(
+                                            IllegalStateException.class,
+                                            () -> {
+                                                asi.waitExternal();
+                                            });
+                                });
+
                         var p = asi.parallel();
                         p.add(
                                 (asi2) -> {
@@ -1743,6 +1762,8 @@ class AsyncStepsRITest {
                     () -> {
                         p.get(1, TimeUnit.SECONDS);
                     });
+
+            assertTrue(data.cancel_called);
         }
 
         // --------------------------------------------------------------------
@@ -2061,7 +2082,6 @@ class AsyncStepsRITest {
         @Test
         void cancelFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
-            CompletableFuture<Void> done = new CompletableFuture<>();
 
             var data =
                     new Object() {

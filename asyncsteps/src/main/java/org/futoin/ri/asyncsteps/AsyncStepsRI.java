@@ -262,7 +262,7 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public Object syncRoot() {
-            return AsyncStepsRI.this;
+            return AsyncStepsRI.this.syncRoot();
         }
 
         @Override
@@ -368,6 +368,10 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void setTimeout(long timeout_ms) {
+            if (exec_top_ != this) {
+                throw new IllegalStateException("adding sub-step out of order");
+            }
+
             if (error_code_ != null) {
                 throw new IllegalStateException("setTimeout() call on protector");
             }
@@ -382,6 +386,10 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void setCancel(CancelCallback on_cancel) {
+            if (exec_top_ != this) {
+                throw new IllegalStateException("adding sub-step out of order");
+            }
+
             if (error_code_ != null) {
                 throw new IllegalStateException("setCancel() call on protector");
             }
@@ -391,6 +399,10 @@ public final class AsyncStepsRI implements AsyncSteps {
 
         @Override
         public void waitExternal() {
+            if (exec_top_ != this) {
+                throw new IllegalStateException("adding sub-step out of order");
+            }
+
             if (error_code_ != null) {
                 throw new IllegalStateException("waitExternal() call on protector");
             }
