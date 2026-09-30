@@ -26,4 +26,7 @@
     <Method name="stateVarsTest" />
     <Bug code="SWL" />
   </Match>
+  <Match>
+    <Package name="org.futoin.ri.asyncsteps.jmh_generated" />
+  </Match>
 </FindBugsFilter>

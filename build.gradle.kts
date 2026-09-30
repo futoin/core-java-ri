@@ -6,6 +6,7 @@ plugins {
     id("com.diffplug.spotless") version "8.8.0" apply false
     id("com.github.spotbugs") version "6.5.9" apply false
     id("com.vanniktech.maven.publish") version "0.37.0" apply false
+    id("com.cleanroommc.conventions.benchmarking") version "1.1.9" apply false
 }
 
 repositories {
