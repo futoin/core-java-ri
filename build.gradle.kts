@@ -37,7 +37,7 @@ subprojects {
             if (useFutoinDevAPI) {
                 implementation(project(":api"))
             } else {
-                implementation("org.futoin:core-api:*")
+                implementation("org.futoin:core-api:1.0.0")
             }
 
             // jUnit 6
