@@ -27,8 +27,14 @@ import org.openjdk.jmh.infra.Blackhole;
 @Threads(value = 1)
 @Fork(value = 1)
 @Timeout(time = 900, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
-@Warmup(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(
+        iterations = BenchBase.Measure_ITER,
+        time = BenchBase.Measure_TIME,
+        timeUnit = TimeUnit.SECONDS)
+@Warmup(
+        iterations = BenchBase.Warmup_ITER,
+        time = BenchBase.Warmup_TIME,
+        timeUnit = TimeUnit.SECONDS)
 public class ThreadsBench extends BenchBase {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
@@ -38,13 +44,13 @@ public class ThreadsBench extends BenchBase {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OperationsPerInvocation(Parallel_COUNT)
+    @OperationsPerInvocation(ThreadsParallel_COUNT)
     public void parallel(Blackhole blackhole) throws Throwable {
         var stack = new ArrayDeque<CompletableFuture<Integer>>();
-        var remaining = new AtomicInteger(Parallel_COUNT);
+        var remaining = new AtomicInteger(ThreadsParallel_COUNT);
         var done = new CompletableFuture<Void>();
 
-        for (int i = Parallel_COUNT / ThreadsParallel_LIMIT; i >= 0; --i) {
+        for (int i = ThreadsParallel_COUNT / ThreadsParallel_LIMIT; i >= 0; --i) {
             var threads = new ArrayDeque<Thread>();
             for (int j = ThreadsParallel_LIMIT; j > 0; --j) {
                 var t =
@@ -99,10 +105,10 @@ public class ThreadsBench extends BenchBase {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OperationsPerInvocation(ParallelWaitLoop_COUNT)
+    @OperationsPerInvocation(ThreadsParallelWaitLoop_COUNT)
     public void parallelWaitLoop(Blackhole blackhole) throws Throwable {
         var stack = new ArrayDeque<CompletableFuture<Integer>>();
-        var remaining = new AtomicInteger(ParallelWaitLoop_COUNT);
+        var remaining = new AtomicInteger(ThreadsParallelWaitLoop_COUNT);
         var done = new CompletableFuture<Void>();
         var threads = new ArrayDeque<Thread>();
 
@@ -131,7 +137,7 @@ public class ThreadsBench extends BenchBase {
             threads.add(t);
         }
 
-        for (int j = ParallelWaitLoop_COUNT; j > 0; --j) {
+        for (int j = ThreadsParallelWaitLoop_COUNT; j > 0; --j) {
             for (; ; ) {
                 CompletableFuture<Integer> f;
                 synchronized (stack) {

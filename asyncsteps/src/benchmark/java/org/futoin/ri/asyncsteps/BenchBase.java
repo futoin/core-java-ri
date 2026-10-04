@@ -20,7 +20,13 @@ package org.futoin.ri.asyncsteps;
 public class BenchBase {
     static final int Simple_COUNT = 1_000_000;
     static final int Parallel_COUNT = 1_000_000;
+    static final int ThreadsParallel_COUNT = 100_000;
     static final int Parallel_LIMIT = 30_000;
     static final int ThreadsParallel_LIMIT = 10_000;
     static final int ParallelWaitLoop_COUNT = 10_000_000;
+    static final int ThreadsParallelWaitLoop_COUNT = 100_000;
+    static final int Warmup_TIME = 10;
+    static final int Warmup_ITER = 3;
+    static final int Measure_TIME = 60;
+    static final int Measure_ITER = 3;
 }

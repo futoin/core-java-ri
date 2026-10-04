@@ -29,8 +29,14 @@ import org.openjdk.jmh.infra.Blackhole;
         value = 1,
         jvmArgsAppend = {"-Djdk.virtualThreadScheduler.parallelism=1"})
 @Timeout(time = 90, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
-@Warmup(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(
+        iterations = BenchBase.Measure_ITER,
+        time = BenchBase.Measure_TIME,
+        timeUnit = TimeUnit.SECONDS)
+@Warmup(
+        iterations = BenchBase.Warmup_ITER,
+        time = BenchBase.Warmup_TIME,
+        timeUnit = TimeUnit.SECONDS)
 public class VirtualThreadsBench extends BenchBase {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
