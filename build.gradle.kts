@@ -9,6 +9,9 @@ plugins {
     id("com.cleanroommc.conventions.benchmarking") version "1.1.9" apply false
 }
 
+group = "org.futoin"
+version = "1.0.0"
+
 repositories {
     mavenCentral()
 }
@@ -26,8 +29,8 @@ subprojects {
             plugin("com.vanniktech.maven.publish")
         }
 
-        group = "org.futoin"
-        version = "0.0.1"
+        project.group = rootProject.group
+        project.version = rootProject.version
 
         repositories {
             mavenCentral()
