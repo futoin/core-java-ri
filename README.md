@@ -1,12 +1,12 @@
 
 ### FutoIn Core Java Reference Implementation
 
-FutoIn is documentation-driven foundation of neutral software concepts and
+FutoIn is a documentation-driven foundation of neutral software concepts and
 reference implementations. In addition to its uniform approach, FutoIn aims to
 excel in performance and resource efficiency.
 
 FutoIn provides easy mixing of incompatible technologies in projects with loose
-coupling of all parts.
+coupling across all parts.
 
 Please visit the official [FutoIn Guide](https://futoin.org/docs/) and 
 [FutoIn Specs](https://specs.futoin.org/) for more information.
@@ -16,6 +16,32 @@ Please visit the official [FutoIn Guide](https://futoin.org/docs/) and
 * [**FTN12: AsyncSteps** Guide](https://futoin.org/docs/asyncsteps/)
     - See `org.futoin.api.AsyncSteps` interface and helpers.
     - See [Spec](https://specs.futoin.org/final/preview/ftn12_async_api.html).
+
+### Mirrors
+
+FutoIn Core Java API:
+
+- [Codeberg: FutoIn Core Java API](https://codeberg.org/futoin/core-java-api)
+- [GitHub: FutoIn Core Java API](https://github.com/futoin/core-java-api)
+- [GitLab: FutoIn Core Java API](https://gitlab.com/futoin/core/java/api)
+
+FutoIn Core Java Reference Implementation:
+
+- [Codeberg: FutoIn Core Java RI](https://codeberg.org/futoin/core-java-ri)
+- [GitHub: FutoIn Core Java RI](https://github.com/futoin/core-java-ri)
+- [GitLab: FutoIn Core Java RI](https://gitlab.com/futoin/core/java/ri)
+
+FutoIn Core C++ API:
+
+- [Codeberg: FutoIn Core C++ API](https://codeberg.org/futoin/core-cpp-api)
+- [GitHub: FutoIn Core C++ API](https://github.com/futoin/core-cpp-api)
+- [GitLab: FutoIn Core C++ API](https://gitlab.com/futoin/core/cpp/api)
+
+FutoIn Core C++ Reference Implementation with submodules:
+
+- [Codeberg: FutoIn Core C++ RI](https://codeberg.org/futoin/core-cpp-ri)
+- [GitHub: FutoIn Core C++ RI](https://github.com/futoin/core-cpp-ri)
+- [GitLab: FutoIn Core C++ RI](https://gitlab.com/futoin/core/cpp/ri)
 
 ### Add to project
 
