@@ -380,7 +380,9 @@ public final class AsyncStepsRI implements AsyncSteps {
                     async_tool_.deferred(
                             timeout_ms,
                             () -> {
-                                exec_top_.errorNoThrow(Error.Timeout);
+                                if (exec_top_ != null) {
+                                    exec_top_.errorNoThrow(Error.Timeout);
+                                }
                             });
         }
 
@@ -928,8 +930,7 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     /** ignore */
     private void schedule_exec() {
-        if (!in_exec_) {
-            assert (exec_top_ != null);
+        if (!in_exec_ && (exec_top_ != null)) {
             assert (exec_handle_ == null);
             exec_handle_ = async_tool_.immediate(this::handle_execute);
         }
@@ -1001,7 +1002,9 @@ public final class AsyncStepsRI implements AsyncSteps {
 
     @Override
     public void cancel() {
-        if (async_tool_.is_same_thread()) {
+        // Always cancel with a clean stack of potentially itself
+        // or a race with previous execute()
+        if (async_tool_.is_same_thread() && !in_exec_) {
             handle_cancel();
         } else {
             async_tool_.immediate(this::handle_cancel);

@@ -2137,6 +2137,52 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void immediateCancelFlow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            $as.add(
+                    (asi) -> {
+                        var new_asi = asi.newInstance();
+                        new_asi.execute();
+                        new_asi.cancel();
+                        asi.relinquish();
+                    });
+
+            $as.promise().get(1, TimeUnit.SECONDS);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
+        void cancelInExecFLow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+
+            var data =
+                    new Object() {
+                        boolean cancel_called;
+                        boolean step1_called;
+                        boolean step2_called;
+                        boolean step3_called;
+                    };
+
+            $as.add(
+                    (asi) -> {
+                        $as.cancel();
+                        asi.relinquish();
+                        asi.add(
+                                (asi2) -> {
+                                    assertFalse(true);
+                                });
+                    });
+
+            assertThrows(
+                    java.util.concurrent.CancellationException.class,
+                    () -> {
+                        $as.promise().get(1, TimeUnit.SECONDS);
+                    });
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void syncFlow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
             CompletableFuture<Void> done = new CompletableFuture<>();
