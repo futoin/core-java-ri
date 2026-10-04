@@ -17,6 +17,30 @@ Please visit the official [FutoIn Guide](https://futoin.org/docs/) and
     - See `org.futoin.api.AsyncSteps` interface and helpers.
     - See [Spec](https://specs.futoin.org/final/preview/ftn12_async_api.html).
 
+### Add to project
+
+Release repository is **Maven Central**.
+
+#### AsyncSteps package
+
+**Gradle**:
+
+```
+dependencies {
+  implementation("org.futoin:asyncsteps:{VERSION}")`
+}
+```
+
+**Maven**:
+
+```xml
+<dependency>
+    <groupId>org.futoin</groupId>
+    <artifactId>asyncsteps</artifactId>
+    <version>{VERSION}</version>
+</dependency>
+```
+
 ### Benchmark
 
 AsyncSteps benchmarks are available under [asyncsteps/src/benchmark/](). Those

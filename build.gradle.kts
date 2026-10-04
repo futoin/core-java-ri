@@ -116,8 +116,8 @@ subprojects {
             coordinates(group as String, name as String, version as String)
 
             pom {
-                name.set("FutoIn Core API")
-                description.set("FutoIn Core programmatic API for loose coupling.")
+                name.set("FutoIn Core RI: ${project.name}")
+                description.set("FutoIn Core Reference Implementation for ${project.name} component.")
                 inceptionYear.set("2013")
                 url.set("https://futoin.org/")
                 licenses {
@@ -126,7 +126,7 @@ subprojects {
                         url.set("https://specs.futoin.org/LICENSE.txt")
                         distribution.set("https://specs.futoin.org/LICENSE.txt")
                     }
-                    }
+                }
                 developers {
                     developer {
                         id.set("andvgal")
@@ -135,8 +135,8 @@ subprojects {
                     }
                 }
                 scm {
-                    url.set("https://github.com/futoin/core-java-api/")
-                    connection.set("scm:git:git://github.com/futoin/core-java-api.git")
+                    url.set("https://github.com/futoin/core-java-ri/")
+                    connection.set("scm:git:git://github.com/futoin/core-java-ri.git")
                 }
             }
         }
