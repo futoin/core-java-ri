@@ -3,8 +3,8 @@ plugins {
     signing
     jacoco
     id("java-library")
-    id("com.diffplug.spotless") version "8.8.0" apply false
-    id("com.github.spotbugs") version "6.5.9" apply false
+    id("com.diffplug.spotless") version "8.10.3" apply false
+    id("com.github.spotbugs") version "6.5.12" apply false
     id("com.vanniktech.maven.publish") version "0.37.0" apply false
     id("com.cleanroommc.conventions.benchmarking") version "1.1.9" apply false
 }
@@ -41,13 +41,13 @@ subprojects {
             }
 
             // jUnit 6
-            testImplementation(platform("org.junit:junit-bom:6.1.2"))
+            testImplementation(platform("org.junit:junit-bom:6.1.3"))
             testImplementation("org.junit.jupiter:junit-jupiter")
             testCompileOnly("org.junit.jupiter:junit-jupiter-params")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
             // Mockito 5
-            testImplementation("org.mockito:mockito-core:5.23.0")
+            testImplementation("org.mockito:mockito-core:5.24.0")
         }
 
         java {
@@ -151,4 +151,8 @@ subprojects {
             }
         }
     }
+}
+
+tasks.named<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask>("dependencyUpdates") {
+  revision = "release"
 }
