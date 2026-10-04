@@ -381,6 +381,13 @@ public final class AsyncStepsRI implements AsyncSteps {
                             timeout_ms,
                             () -> {
                                 if (exec_top_ != null) {
+                                    var eh = exec_handle_;
+
+                                    if (eh != null) {
+                                        eh.cancel();
+                                        exec_handle_ = null;
+                                    }
+
                                     exec_top_.errorNoThrow(Error.Timeout);
                                 }
                             });

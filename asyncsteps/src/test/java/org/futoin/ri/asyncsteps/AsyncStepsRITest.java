@@ -928,6 +928,50 @@ class AsyncStepsRITest {
 
         // --------------------------------------------------------------------
         @Test
+        void setTimeoutInnerExecutionFlow() throws Throwable {
+            AsyncSteps $as = new AsyncStepsRI();
+            CompletableFuture<Void> done = new CompletableFuture<>();
+
+            var data =
+                    new Object() {
+                        int counter = 0;
+                    };
+
+            $as.state()
+                    .set_catch_trace(
+                            (ex) -> {
+                                ex.printStackTrace(System.err);
+                            });
+
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        asi.setTimeout(100);
+                        asi.loop(
+                                (asi2) -> {
+                                    asi2.relinquish();
+                                });
+                    },
+                    (asi, err) -> {
+                        data.counter++;
+                        assertEquals("Timeout", err);
+                        asi.success();
+                    });
+            $as.add(
+                    (asi) -> {
+                        data.counter++;
+                        done.complete(null);
+                    });
+
+            $as.execute();
+
+            done.get(1, TimeUnit.SECONDS);
+
+            assertEquals(3, data.counter);
+        }
+
+        // --------------------------------------------------------------------
+        @Test
         void outOfOrderCalls() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
 
