@@ -14,6 +14,8 @@
     "check": [
       "@default",
       "@cte gradle test"
-    ]
+    ], 
+    "package": [],
+    "promote": "@cte gradle publishToMavenCentral"
   }
 }
