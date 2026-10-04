@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import org.futoin.api.AsyncSteps;
 import org.futoin.api.Error;
+import org.futoin.api.Limiter;
+import org.futoin.api.Mutex;
+import org.futoin.api.Throttle;
 
 class Examples {
     boolean WITH_EXCEPTIONS = true;
@@ -42,7 +45,25 @@ class Examples {
 
     void external_cancel(Object handle) {}
 
-    final MutexRI mutex = new MutexRI();
+    // 1 concurrent, infinite queue
+    final Mutex mutex = new MutexRI();
+    // 10 concurrent, 1000 queue items
+    final Mutex mutex2 = new MutexRI(10, 1000);
+    // 100 entries per second. infinite queue
+    final Throttle throttle = new ThrottleRI(100);
+    // 100 entries per 10 seconds with maximum queue of 300
+    final Throttle throttle2 =
+            new ThrottleRI(AsyncToolRI.shared(), 100, Duration.ofSeconds(10), 300);
+    // 10 concurrent entries with queue of 20 with 100 entries over
+    // a period of 10 seconds with burst queue of 200
+    final Limiter limiter =
+            new LimiterRI(
+                    (new Limiter.Options())
+                            .withConcurrent(10)
+                            .withMaxQueue(20)
+                            .withRate(100)
+                            .withPeriod(Duration.ofSeconds(10))
+                            .withBurst(200));
 
     AsyncSteps.ISync get_some_synchronization_object() {
         return mutex;
@@ -414,9 +435,101 @@ class Examples {
     }
 
     @org.junit.jupiter.api.Test
-    void testExample() throws Throwable {
+    void testAPIExample() throws Throwable {
         var $as = new AsyncStepsRI();
         $as.add(this::example_business_logic);
         $as.promise().get();
+    }
+
+    @org.junit.jupiter.api.Test
+    void example_AsyncStepsRI() throws Throwable {
+        // Use the default AsyncToolRI.shared() singleton
+        {
+            var $as = new AsyncStepsRI();
+            $as.add(
+                    (asi) -> {
+                        /* ... */
+                    });
+            $as.execute();
+        }
+
+        // A dedicated event loop for some specific job
+        try (var async_tool = new AsyncToolRI()) {
+            for (int i = 0; i < 100; ++i) {
+                var $as = new AsyncStepsRI(async_tool);
+                $as.add(this::example_business_logic);
+                $as.execute();
+            }
+        }
+    }
+
+    @org.junit.jupiter.api.Test
+    void example_AsyncToolRI() throws Throwable {
+        // Create underlying event loop with own thread
+        try (var async_tool_own_loop = new AsyncToolRI()) {
+            async_tool_own_loop.immediate(
+                    () -> {
+                        // Executes first
+                        async_tool_own_loop.immediate(
+                                () -> {
+                                    // Likes executes second due to the race below.
+                                });
+                    });
+            async_tool_own_loop.immediate(
+                    () -> {
+                        // Likely executes third due to external scheduling race.
+                    });
+            async_tool_own_loop.deferred(
+                    Duration.ofMillis(100),
+                    () -> {
+                        // Executes not earlier than the time delay
+                    });
+
+            (new AsyncStepsRI(async_tool_own_loop)).execute();
+
+            // Clean shutdown requires all scheduled jobs to complete.
+        }
+
+        // Create underlying event loop for integration into foreign event loop
+        try (var async_tool_foreign_loop =
+                new AsyncToolRI(
+                        () -> {
+                            // A callback to wake up foreign event loop to indicate new work
+                            // available due to out-of-band API usage.
+                        })) {
+            async_tool_foreign_loop.immediate(
+                    () -> {
+                        // Executes first
+                        async_tool_foreign_loop.immediate(
+                                () -> {
+                                    // Executes third
+                                });
+                    });
+            async_tool_foreign_loop.immediate(
+                    () -> {
+                        // Executes second
+                    });
+
+            (new AsyncStepsRI(async_tool_foreign_loop))
+                    .add(
+                            (asi) -> {
+                                // Executes fourth
+                            })
+                    .execute();
+
+            // Idiomatic foreing event loop logic
+            for (; ; ) {
+                var cycleResult = async_tool_foreign_loop.iterate();
+
+                if (cycleResult.haveWork()) {
+                    // Delay may be zero, if new immediate() calls are scheduled
+                    // during the current cycle.
+                    Thread.sleep(Duration.ofNanos(cycleResult.delayNs()).toMillis());
+                } else {
+                    // Wait for the wakeup callback, supplied to c-tor above.
+                    break;
+                }
+            }
+        }
     }
 }
