@@ -1,2 +1,2 @@
-=== (next) ===
+=== 1.0.0 (2026-10-04) ===
 NEW: FTN12 AsyncSteps reference implementation
