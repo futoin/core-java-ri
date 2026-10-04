@@ -2200,14 +2200,6 @@ class AsyncStepsRITest {
         void cancelInExecFLow() throws Throwable {
             AsyncSteps $as = new AsyncStepsRI();
 
-            var data =
-                    new Object() {
-                        boolean cancel_called;
-                        boolean step1_called;
-                        boolean step2_called;
-                        boolean step3_called;
-                    };
-
             $as.add(
                     (asi) -> {
                         $as.cancel();
