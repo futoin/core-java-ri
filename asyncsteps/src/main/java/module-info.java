@@ -23,4 +23,15 @@ module org.futoin.ri.asyncsteps {
 
     provides org.futoin.api.AsyncSteps with
             org.futoin.ri.asyncsteps.AsyncStepsRI;
+    provides org.futoin.api.AsyncTool with
+            org.futoin.ri.asyncsteps.AsyncToolRI;
+    provides org.futoin.api.Mutex with
+            org.futoin.ri.asyncsteps.MutexRI;
+/*
+// The default c-tors are of little use.
+provides org.futoin.api.Throttle with
+        org.futoin.ri.asyncsteps.ThrottleRI;
+provides org.futoin.api.Limiter with
+        org.futoin.ri.asyncsteps.LimiterRI;
+*/
 }
